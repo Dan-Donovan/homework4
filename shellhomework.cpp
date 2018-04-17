@@ -23,13 +23,14 @@ using namespace std;
 // int thread_count; /* Number of threads used */
 // 
   bool valid; // is at a value series of commands
-  int * pipecount;
+  int pipecount;
   int * errorStatus;
   char ** tokens;
   char operators[3] = {'>','<','|'};
   int pidstatus;
   char * cwd;
   int ** pipearray;
+  char ** args;
   pid_t pid;
   pid_t pipeid;
   pid_t pids[50] = {0};
@@ -83,6 +84,7 @@ char *trimwhitespace(char *str){
 
 
 char ** parseLine(char * raw){
+  cout << "inside belly of the beast" << endl;
   valid = true;
   int index = 0;
   int argVal = 0;
@@ -93,6 +95,7 @@ char ** parseLine(char * raw){
   int hasIn = 0; 
   int starting = 0;
   int previousOut = 0;
+  pipecount = 0;
   char * command = "";
   if (raw[0] == '|' || raw[0] == '>' || raw[0] == '<'  || raw[strlen(raw)-1] == '|' || raw[strlen(raw)-1] == '>' || raw[strlen(raw)-1] == '<'){
     valid = false;
@@ -101,9 +104,10 @@ char ** parseLine(char * raw){
     
   }
   
-
-    for (int i = 0; i < strlen(raw); ++i){
-      
+    cout << "before the for loop!" << endl;
+    cout << strlen(raw) << endl;
+    for (int i = 0; i < strlen(raw); i++){
+      cout << "i value is " << i << endl;
       if (raw[i] != '|'){
 	command = command + raw[i];
 	if(raw[i] == '>'){
@@ -146,6 +150,7 @@ char ** parseLine(char * raw){
 // 	}
 	
 	//tokens[index][argVal] = command;
+	cout << "here i am out of the for loop!" << endl;
 	tokens[index] = command;
 	index += 1;
 	
@@ -157,6 +162,11 @@ char ** parseLine(char * raw){
 	previousOut = 0;
       }
     }
+    if (pipecount == 0){
+      cout << "it does equal 0!" << endl;
+      tokens[index] = command;
+    }
+    cout << "here i am out of the for loop for real!" << endl;
     return tokens;
 }
 
@@ -186,9 +196,13 @@ char ** parseLine(char * raw){
 
 
 int main() {
-
-  cwd = getcwd(NULL,0);
-  //cout << *cwd << endl;
+  char  buff[300];
+  //cwd = getcwd(buff,250);
+  if (getcwd(buff,250) == NULL){
+    cout << "lolll" << endl;
+  }
+  cout << buff << endl;
+  
   while (1) {
   // time to read a line of input
   //char * currentLine = inputParsing();
@@ -200,30 +214,36 @@ int main() {
   if (strlen(currentLine) > 100){
     cout << "invalid" << endl;
   }
-  
+  cout << "before the current commands" << endl;
   char ** currentCommands = parseLine(currentLine);
-
-  pipearray = (int **) malloc(sizeof(int*) * (*pipecount));
-  for (pipeid = 0; pipeid < *pipecount; pipeid++) {
-    pipearray[pipeid] = (int*)malloc(sizeof(int[2]));
-    if (pipe(pipearray[pipeid]) != 0){
-      perror("pipe()");
-    }
-    }
+  cout << pipecount << endl;
+  if (pipecount > 0) {
+    pipearray = (int **) malloc(sizeof(int*) * (pipecount));
+    cout << "here??" << endl;
+    for (pipeid = 0; pipeid < pipecount; pipeid++) {
+      pipearray[pipeid] = (int*)malloc(sizeof(int[2]));
+      if (pipe(pipearray[pipeid]) != 0){
+	perror("pipe()");
+      }
+      }
+  }
+  cout << "the next hurtle" << endl;
   //parse the line
   //for each command in the line {
   
   int pipeid = 0;
   int p_id = 0;
   int current = 0;
-  int num_token_groups = *pipecount + 1;
+  int num_token_groups = pipecount + 1;
     while(num_token_groups > 0){
       num_token_groups -= 1;
+      cout << "before the pid " << endl;
       pid = fork();
+      cout << "after da fork" << endl;
       if (pid == 0) {
 	if (pipecount > 0){
 	  if (num_token_groups > 0){
-	    if (num_token_groups == *pipecount) {
+	    if (num_token_groups == pipecount) {
 	      close(pipearray[pipeid][0]);
 	      dup2(pipearray[pipeid][1], STDOUT_FILENO);
 	    }
@@ -242,9 +262,41 @@ int main() {
 	  
 	}
 	}
-      char * commands = tokens[current];
       
-      execv(tokens[current][0], tokens[current]);
+      char * command = tokens[current];
+      //char * args;
+      	//string deliminator
+	//char ** part = "";
+	int k = 0;
+	
+	for (int j = 0; j < strlen(command); j++){
+	  if (command[j] != ' '){
+	    if(j == 0 && command[j] != '/'){
+	      int l = 0;
+	      while(l < 250 && buff[l] != '\0'){
+		args[k] += buff[l];
+	      }
+	      args[k] += '/';
+	    }
+	    args[k] += command[j];
+	    
+	  }
+	  else {
+	    while(j + 1 < strlen(command)){
+	      if(command[j+1] == ' '){
+		j = j + 1;
+	      }
+	    }
+	    //args[index][argVal] = part;
+	    k += 1;
+	    //part = "";
+	  }
+	  cout << "command is " << args[0] << endl;
+	  
+	}
+      cout << "command is " << args[0] << endl;
+      execv(args[0], args);
+      //execv(tokens[current][0], tokens[current]);
 	
       }
     else{
@@ -258,10 +310,10 @@ int main() {
   // 	close(pipe_array[j][1]);
   //       }
     }
-    for (p_id = 0; p_id <= *pipecount; p_id++) {
+    for (p_id = 0; p_id <= pipecount; p_id++) {
       pid_status = 0;
       waitpid(pids[p_id], &pid_status,0);
-      cerr << pid_status << endl;
+      cerr << "error status" << pid_status << endl;
 	}
 	  }
   }
