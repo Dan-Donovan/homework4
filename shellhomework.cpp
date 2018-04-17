@@ -96,7 +96,8 @@ char ** parseLine(char * raw){
   int starting = 0;
   int previousOut = 0;
   pipecount = 0;
-  char * command = "";
+  int p = 0;
+  char * command = (char *)malloc(strlen(raw) *sizeof(char));;
   if (raw[0] == '|' || raw[0] == '>' || raw[0] == '<'  || raw[strlen(raw)-1] == '|' || raw[strlen(raw)-1] == '>' || raw[strlen(raw)-1] == '<'){
     valid = false;
     return null;
@@ -109,7 +110,10 @@ char ** parseLine(char * raw){
     for (int i = 0; i < strlen(raw); i++){
       cout << "i value is " << i << endl;
       if (raw[i] != '|'){
-	command = command + raw[i];
+	cout << "adding on a value " << raw[i] << endl;
+	//command = command + raw[i];
+	command[p] = raw[i];
+	p++;
 	if(raw[i] == '>'){
 	  hasOut += 1; 
 	  previousOut = 1;
@@ -148,7 +152,8 @@ char ** parseLine(char * raw){
 // 	  }
 // 	  
 // 	}
-	
+	command[p] = '\0';
+	p = p +1;
 	//tokens[index][argVal] = command;
 	cout << "here i am out of the for loop!" << endl;
 	tokens[index] = command;
@@ -163,8 +168,12 @@ char ** parseLine(char * raw){
       }
     }
     if (pipecount == 0){
+      command[p] = '\0';
+      cout << command[0] << " first" << endl;
       cout << "it does equal 0!" << endl;
+      cout << command << " that was the command" << endl;
       tokens[index] = command;
+      cout << "what am i doing?" << "index is " << index << tokens[index] << endl;
     }
     cout << "here i am out of the for loop for real!" << endl;
     return tokens;
@@ -215,8 +224,9 @@ int main() {
     cout << "invalid" << endl;
   }
   cout << "before the current commands" << endl;
-  char ** currentCommands = parseLine(currentLine);
+  char ** tokens = parseLine(currentLine);
   cout << pipecount << endl;
+  cout << *tokens[0] << endl;
   if (pipecount > 0) {
     pipearray = (int **) malloc(sizeof(int*) * (pipecount));
     cout << "here??" << endl;
@@ -241,6 +251,7 @@ int main() {
       pid = fork();
       cout << "after da fork" << endl;
       if (pid == 0) {
+	cout << "inside ie child" << endl;
 	if (pipecount > 0){
 	  if (num_token_groups > 0){
 	    if (num_token_groups == pipecount) {
@@ -262,44 +273,84 @@ int main() {
 	  
 	}
 	}
-      
+      cout << "gotta be here" << tokens[current] << endl;
       char * command = tokens[current];
+      cout << "after faulty operator" << endl;
+      //cout << command << endl;
       //char * args;
       	//string deliminator
 	//char ** part = "";
-	int k = 0;
-	
-	for (int j = 0; j < strlen(command); j++){
+      args = (char**)malloc(sizeof(char*) *50);
+      for (int f = 0; f < 50; f++){
+	args[f] = (char *) malloc(100 * sizeof(char));
+      }
+      int k = 0;
+	int t = 0;
+	for (int j = 0; j < strlen(command) - 1; j++){
+	  cout << "j balue is " << j << endl;
+	  
 	  if (command[j] != ' '){
+	    //cout << "i mean your right" << endl;
 	    if(j == 0 && command[j] != '/'){
 	      int l = 0;
 	      while(l < 250 && buff[l] != '\0'){
-		args[k] += buff[l];
+		args[k][t] = buff[l];
+		l = l + 1;
+		t = t + 1;
 	      }
-	      args[k] += '/';
+	      args[k][t] = '/';
+	      t = t + 1;
 	    }
-	    args[k] += command[j];
-	    
+	    args[k][t] = command[j];
+	    cout << "added an actual command" << endl;
+	    t = t + 1;
 	  }
 	  else {
-	    while(j + 1 < strlen(command)){
+	    bool nomoreSpace = true;
+	    while(j + 1 < strlen(command) && nomoreSpace){
+	      cout << "happened once" << endl;
+	      nomoreSpace = false;
 	      if(command[j+1] == ' '){
 		j = j + 1;
+		nomoreSpace = true;
 	      }
 	    }
 	    //args[index][argVal] = part;
+	    args[k][t] = '\0';
 	    k += 1;
+	    t = 0;
 	    //part = "";
 	  }
-	  cout << "command is " << args[0] << endl;
+	  
+	  args[k][t] = '\0';
+	  //cout << "before that" << endl;
+	  //cout << args << endl;
+	  //cout << "command is " << args[0] << endl;
 	  
 	}
+	k += 2;
+      cout << "k value is " << k << endl;
+      char * argv[k];
+      int w = 0;
+      for (int e = 0; e < k; e++){
+	argv[e] = args[e];
+	w = e;
+      }
+      cout << "w is " << w << endl;
+      argv[w] = NULL;
+	//args[k+1] = NULL;
+      cout << "out of loop!" << endl;
       cout << "command is " << args[0] << endl;
-      execv(args[0], args);
+      cout << "second arg is " << args[1] << endl;
+      cout << "third arg is " << args[2] << endl;
+      cout << " " << endl;
+      
+      execvp(argv[0], argv);
       //execv(tokens[current][0], tokens[current]);
 	
       }
     else{
+      cout << "the parent" << endl;
       pipeid++;
       pids[p_id] = pid;
       p_id++;
