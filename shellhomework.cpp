@@ -96,9 +96,10 @@ char ** parseLine(char * raw){
   int starting = 0;
   int previousOut = 0;
   pipecount = 0;
+  int count = 0;
   int p = 0;
-  char * command = (char *)malloc(strlen(raw) *sizeof(char));;
-  if (raw[0] == '|' || raw[0] == '>' || raw[0] == '<'  || raw[strlen(raw)-1] == '|' || raw[strlen(raw)-1] == '>' || raw[strlen(raw)-1] == '<'){
+  char ** command = (char **)malloc(strlen(raw) *sizeof(char*));
+  if (raw[p] == '|' || raw[p] == '>' || raw[p] == '<'  || raw[strlen(raw)-1] == '|' || raw[strlen(raw)-1] == '>' || raw[strlen(raw)-1] == '<'){
     valid = false;
     return null;
     //cannot end with a operations or begin with an operation
@@ -107,12 +108,22 @@ char ** parseLine(char * raw){
   
     cout << "before the for loop!" << endl;
     cout << strlen(raw) << endl;
-    for (int i = 0; i < strlen(raw); i++){
+    string curr = "";
+    for (int i = 0; i < strlen(raw) -1; i++){
       cout << "i value is " << i << endl;
       if (raw[i] != '|'){
 	cout << "adding on a value " << raw[i] << endl;
 	//command = command + raw[i];
-	command[p] = raw[i];
+	//command[count][p] = raw[i];
+	//command[count] += raw[i];
+	//curr[p] += raw[i];
+	curr += raw[i];
+	cout << "current curr length is " << curr.length() << endl;
+	//cout << command[count] << endl;
+	cout << "here????" << endl;
+	if(p == 0 && raw[i] == ' ' ){
+	  p--;
+	}
 	p++;
 	if(raw[i] == '>'){
 	  hasOut += 1; 
@@ -124,6 +135,7 @@ char ** parseLine(char * raw){
 	    valid =false;
 	  }
 	}
+	cout << "after this part" << endl;
       }
       
       if(raw[i] == '|'){
@@ -152,14 +164,26 @@ char ** parseLine(char * raw){
 // 	  }
 // 	  
 // 	}
-	command[p] = '\0';
-	p = p +1;
+
+	//command[count] += '\0';
+	//command[count][p] = '\0';
+	//p = p +1;
+	curr += '\0';
+	
+	command[count] = (char *) malloc(curr.length() + 1 * sizeof(char));
+	for ( int i = 0; i < curr.length() - 1;i++){
+	  command[count][i] = curr[i];
+	}
+	p = 0;
+	count += 1;
+	cout << "---------------------------------" << endl;
+	curr = "";
 	//tokens[index][argVal] = command;
 	cout << "here i am out of the for loop!" << endl;
-	tokens[index] = command;
-	index += 1;
+	//tokens[index] = command;
+	//index += 1;
 	
-	command = "";
+	//command = "";
 	valid = true;
 	hasOut = 0;
 	hasIn = 0; 
@@ -167,16 +191,32 @@ char ** parseLine(char * raw){
 	previousOut = 0;
       }
     }
+    cout << "after the loop" << endl;
     if (pipecount == 0){
-      command[p] = '\0';
-      cout << command[0] << " first" << endl;
+      //cout << command[count] << endl;
+      cout << "why am i inside here" << pipecount << endl;
+      //command[count][p] = '\0';
+      //command[count] += '\0';
+      cout << curr[0] << "first character" << curr.length() << endl;
+      curr += '\0';
+      command[count] = (char *) malloc(curr.length() + 1 * sizeof(char));
+	for ( int i = 0; i < curr.length() - 1;i++){
+	  command[count][i] = curr[i];
+      
+	}
+      //command[count] = (char *) (strlen(curr) + 1 * sizeof(char));
+      //command[count] = curr;
+      
+      cout << command[0][0] << " first" << endl;
       cout << "it does equal 0!" << endl;
-      cout << command << " that was the command" << endl;
-      tokens[index] = command;
-      cout << "what am i doing?" << "index is " << index << tokens[index] << endl;
+      cout << command[0] << " that was the command" << endl;
+      //tokens[index] = command;
+     // cout << "what am i doing?" << "index is " << index << tokens[index] << endl;
     }
     cout << "here i am out of the for loop for real!" << endl;
-    return tokens;
+    //return tokens;
+    return command;
+  
 }
 
     
@@ -246,6 +286,7 @@ int main() {
   int current = 0;
   int num_token_groups = pipecount + 1;
     while(num_token_groups > 0){
+      cout << "num groups left" << num_token_groups << endl;
       num_token_groups -= 1;
       cout << "before the pid " << endl;
       pid = fork();
@@ -275,7 +316,11 @@ int main() {
 	}
       cout << "gotta be here" << tokens[current] << endl;
       char * command = tokens[current];
-      cout << "after faulty operator" << endl;
+      //cout << command << endl;
+      
+      //command = trimwhitespace(command);
+      //cout << command << endl;
+      
       //cout << command << endl;
       //char * args;
       	//string deliminator
@@ -284,9 +329,11 @@ int main() {
       for (int f = 0; f < 50; f++){
 	args[f] = (char *) malloc(100 * sizeof(char));
       }
+      
       int k = 0;
 	int t = 0;
-	for (int j = 0; j < strlen(command) - 1; j++){
+	for (int j = 0; j < strlen(command); j++){
+	  cout << k <<"this is the k value or kth arg" << endl;
 	  cout << "j balue is " << j << endl;
 	  
 	  if (command[j] != ' '){
@@ -306,6 +353,7 @@ int main() {
 	    t = t + 1;
 	  }
 	  else {
+	    cout << "we are in here because there is a space" << endl;
 	    bool nomoreSpace = true;
 	    while(j + 1 < strlen(command) && nomoreSpace){
 	      cout << "happened once" << endl;
@@ -314,25 +362,37 @@ int main() {
 		j = j + 1;
 		nomoreSpace = true;
 	      }
+	      else{
+		k += 1;
+		t = 0;
+		args[k][t] = '\0';
+	      }
 	    }
 	    //args[index][argVal] = part;
 	    args[k][t] = '\0';
-	    k += 1;
-	    t = 0;
+	    //k += 1;
+	    //t = 0;
 	    //part = "";
 	  }
 	  
-	  args[k][t] = '\0';
+	  //args[k][t] = '\0';
 	  //cout << "before that" << endl;
 	  //cout << args << endl;
 	  //cout << "command is " << args[0] << endl;
 	  
 	}
+      
+      for (int j = 0; j <= k; j++){
+	cout << "component is " << args[j] << endl;
+	
+      }
+      cout << "-------------------" << endl;
 	k += 2;
       cout << "k value is " << k << endl;
       char * argv[k];
       int w = 0;
       for (int e = 0; e < k; e++){
+	
 	argv[e] = args[e];
 	w = e;
       }
@@ -341,10 +401,11 @@ int main() {
 	//args[k+1] = NULL;
       cout << "out of loop!" << endl;
       cout << "command is " << args[0] << endl;
-      cout << "second arg is " << args[1] << endl;
-      cout << "third arg is " << args[2] << endl;
-      cout << " " << endl;
-      
+//       cout << "second arg is " << args[1] << endl;
+//       cout << "third arg is " << args[2] << endl;
+//       cout << " " << endl;
+//    
+
       execvp(argv[0], argv);
       //execv(tokens[current][0], tokens[current]);
 	
