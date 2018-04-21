@@ -34,7 +34,7 @@ using namespace std;
   pid_t pid;
   pid_t pipeid;
   pid_t pids[50] = {0};
-  int pid_status = 0;
+  //int pid_status = 0;
 // char * inputParsing() {
 //   fflush(stdout)
 //   int index = 0;
@@ -120,7 +120,7 @@ char ** parseLine(char * raw){
 	curr += raw[i];
 	cout << "current curr length is " << curr.length() << endl;
 	//cout << command[count] << endl;
-	cout << "here????" << endl;
+	//cout << "here????" << endl;
 	if(p == 0 && raw[i] == ' ' ){
 	  p--;
 	}
@@ -192,12 +192,12 @@ char ** parseLine(char * raw){
       }
     }
     cout << "after the loop" << endl;
-    if (pipecount == 0){
-      //cout << command[count] << endl;
-      cout << "why am i inside here" << pipecount << endl;
-      //command[count][p] = '\0';
-      //command[count] += '\0';
-      cout << curr[0] << "first character" << curr.length() << endl;
+//     if (pipecount == 0){
+//       //cout << command[count] << endl;
+//       cout << "why am i inside here" << pipecount << endl;
+//       //command[count][p] = '\0';
+//       //command[count] += '\0';
+//       cout << curr[0] << "first character" << curr.length() << endl;
       curr += '\0';
       command[count] = (char *) malloc(curr.length() + 1 * sizeof(char));
 	for ( int i = 0; i < curr.length() - 1;i++){
@@ -210,9 +210,11 @@ char ** parseLine(char * raw){
       cout << command[0][0] << " first" << endl;
       cout << "it does equal 0!" << endl;
       cout << command[0] << " that was the command" << endl;
+      cout << command[1] << "second command" << endl;
       //tokens[index] = command;
      // cout << "what am i doing?" << "index is " << index << tokens[index] << endl;
-    }
+    //}
+
     cout << "here i am out of the for loop for real!" << endl;
     //return tokens;
     return command;
@@ -266,7 +268,9 @@ int main() {
   cout << "before the current commands" << endl;
   char ** tokens = parseLine(currentLine);
   cout << pipecount << endl;
-  cout << *tokens[0] << endl;
+  //cout << *tokens[0] << endl;
+  cout << tokens[0] << endl;
+  cout << tokens[1] << endl;
   if (pipecount > 0) {
     pipearray = (int **) malloc(sizeof(int*) * (pipecount));
     cout << "here??" << endl;
@@ -283,19 +287,29 @@ int main() {
   
   int pipeid = 0;
   int p_id = 0;
-  int current = 0;
+ // int current = 0;
   int num_token_groups = pipecount + 1;
-    while(num_token_groups > 0){
+  int limit = pipecount + 1;
+  for (int current = 0; current < limit; current++){
+    cout << "current command index is " << current << endl;
+  
+   // while(num_token_groups > 0){
+      
       cout << "num groups left" << num_token_groups << endl;
       num_token_groups -= 1;
       cout << "before the pid " << endl;
       pid = fork();
       cout << "after da fork" << endl;
       if (pid == 0) {
+	
+	cout << "current value is " << current << endl;
+	
 	cout << "inside ie child" << endl;
 	if (pipecount > 0){
 	  if (num_token_groups > 0){
+	    cout << "of course piping" << endl;
 	    if (num_token_groups == pipecount) {
+	      cout << "first pipe" << endl;
 	      close(pipearray[pipeid][0]);
 	      dup2(pipearray[pipeid][1], STDOUT_FILENO);
 	    }
@@ -314,7 +328,7 @@ int main() {
 	  
 	}
 	}
-      cout << "gotta be here" << tokens[current] << endl;
+      cout << "THE PARSED STRING" << " " << tokens[current] << endl;
       char * command = tokens[current];
       //cout << command << endl;
       
@@ -408,7 +422,7 @@ int main() {
 
       execvp(argv[0], argv);
       //execv(tokens[current][0], tokens[current]);
-	
+      //current = current + 1;
       }
     else{
       cout << "the parent" << endl;
@@ -422,12 +436,22 @@ int main() {
   // 	close(pipe_array[j][1]);
   //       }
     }
+    }
+    for (int i = 0; i < pipecount; i++){
+      close(pipearray[i][0]);
+      close(pipearray[i][1]);
+    }
+    int pid_status[pipecount + 1];
     for (p_id = 0; p_id <= pipecount; p_id++) {
-      pid_status = 0;
-      waitpid(pids[p_id], &pid_status,0);
-      cerr << "error status" << pid_status << endl;
+     // pid_status = 0;
+      waitpid(pids[p_id], &pid_status[p_id],0);
+    //  cerr << "error status" << pid_status << endl;
 	}
-	  }
+    for(p_id = 0; p_id <= pipecount; p_id++){
+      cout << "Process exited with status " << pid_status[p_id] << endl;
+    }
+    
+	  
   }
   return 0;
 }
