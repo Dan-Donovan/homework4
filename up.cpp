@@ -309,21 +309,23 @@ int main(int argF, char ** argv) {
   currentLine[y] = '\0';
   
   cout << "before the current commands" << endl;
+  
   char ** tokens = parseLine(currentLine);
   cout << pipecount << endl;
   //cout << *tokens[0] << endl;
   cout << tokens[0] << endl;
-  cout << tokens[1] << endl;
-  if (pipecount > 0) {
-    pipearray = (int **) malloc(sizeof(int*) * (pipecount));
-    cout << "here??" << endl;
-    for (pipeid = 0; pipeid < pipecount; pipeid++) {
-      pipearray[pipeid] = (int*)malloc(sizeof(int[2]));
-      if (pipe(pipearray[pipeid]) != 0){
-	perror("pipe()");
-      }
-      }
-  }
+  cout << "current line is " << currentLine <<endl;
+ // cout << tokens[1] << endl;
+//   if (pipecount > 0) {
+//     pipearray = (int **) malloc(sizeof(int*) * (pipecount));
+//     cout << "here??" << endl;
+//     for (pipeid = 0; pipeid < pipecount; pipeid++) {
+//       pipearray[pipeid] = (int*)malloc(sizeof(int[2]));
+//       if (pipe(pipearray[pipeid]) != 0){
+// 	perror("pipe()");
+//       }
+//       }
+//   }
   cout << "the next hurtle" << endl;
   //parse the line
   //for each command in the line {
@@ -353,6 +355,7 @@ int main(int argF, char ** argv) {
       cout << "after da fork" << endl;
       if (pid == 0) {
 	if (current == 0){
+	  cout << "piping in from startFile" << endl;
 	 if (inputFile.length() > 0) {
 		int iF = open(inputFile.c_str(), O_RDONLY);
 		if (iF == -1) {
@@ -366,9 +369,16 @@ int main(int argF, char ** argv) {
 	}
 	
 	if (current > 0){
+	  cout << "second command piper" << command[current] << endl;
 	  int the_iF = pipes[current - 1][0];
 	  dup2(the_iF,STDIN_FILENO);
 	  close(pipes[current-1][1]);
+	}
+	
+	if (current < num_token_groups - 1){
+	  int the_oF = pipes[current][1];
+	  dup2(the_oF,STDOUT_FILENO);
+	  close(pipes[current][0]);
 	}
 	if (current == num_token_groups - 1){
 	  if (outputFile.length() > 0){
@@ -401,7 +411,7 @@ int main(int argF, char ** argv) {
 // 	}
 // 	}
       //cout << "THE PARSED STRING" << " " << tokens[current] << endl;
-      char * command = tokens[current];
+     // char * command = tokens[current];
       //cout << command << endl;
       
       //command = trimwhitespace(command);
@@ -510,9 +520,9 @@ int main(int argF, char ** argv) {
   //       }
     }
     }
-    for (int i = 0; i < pipecount; i++){
-      close(pipearray[i][0]);
-      close(pipearray[i][1]);
+    for (int i = 0; i <= pipecount; i++){
+      close(pipes[i][0]);
+      close(pipes[i][1]);
     }
     int pid_status[pipecount + 1];
     for (p_id = 0; p_id <= pipecount; p_id++) {
