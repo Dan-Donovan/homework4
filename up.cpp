@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <stdio.h>
+#include <string>
 #include <string.h>
 #include <fcntl.h>
 #include <sys/wait.h>
@@ -83,6 +84,47 @@ char *trimwhitespace(char *str){
   return str;
 }
 
+int stringToTokens(string command, string* argumentP) {
+   int i = 0;
+    int current = 0;
+    int beginPosition = command.find_first_not_of("\t ");
+    int endPosition = command.find_last_not_of("\t ");
+     i = (int) beginPosition;
+    if (beginPosition == endPosition && command[beginPosition] != ' ' && command[beginPosition] != '\t') {
+	argumentP[0] = command[beginPosition];
+  
+      return -1;
+    }
+// iterate over string
+    while (i < endPosition) {
+      cout << i << " tokenizer" << endl;
+// increment i until a non-WS char is found
+      while ((command[i] == ' ' || command[i] == '\t')) {
+	i += 1;
+	cout << "still in this space loop" << endl;
+	}
+// set beginning of token to current pos -- first non-WS char
+      int tokenBeginIndex = i;
+// increment i until a WS char is found
+      while (command[i] != ' ' && command[i] != '\t' && i <= endPosition){
+	i += 1;
+	cout << i << endl;
+	}
+// set token end index to current pos -- first WS char
+      int tokenEndIndex = i;
+      string token = command.substr((unsigned long) tokenBeginIndex, (unsigned long) (tokenEndIndex - tokenBeginIndex));
+      //if (isValidToken(token))
+// save the token into the token array
+      cout << "the token is " << token << endl;
+      cout << "index value is " << current << endl;
+      argumentP[current] = token;
+      cout << "allocation was fine" << endl;
+// increment the pointer index
+      current += 1;
+    }
+    cout << "at the bottom" << endl;
+return 1;
+}
 
 char ** parseLine(char * raw){
   cout << "inside belly of the beast" << endl;
@@ -337,14 +379,52 @@ int main(int argF, char ** argv) {
   int limit = pipecount + 1;
   
   int pipes[num_token_groups][2];
+  
+  
   for (int current = 0; current < limit; current++){
     cout << "current command index is " << current << endl;
+    
     int fd[2];
     string inputFile;
     string outputFile;
+    string tokenized[limit + 1];
    // while(num_token_groups > 0){
     char * command = tokens[current];
+    std::string strcommand(command);
+    cout << "here hahaha" << endl;
+    int a = stringToTokens(strcommand, tokenized);
+    int size = limit + 1;
+    cout << tokenized[0] << "does the tokenizer work?" << endl;
+    //strcommand = str(command);
     
+    
+    for (int j = 0; j < limit + 1; j++){
+	   if (tokenized[j] == "<") {
+	      if (current != 0) {
+		cerr << "wrong pipe" << endl;
+		}
+
+	   else if (j + 1 < limit) {
+	      inputFile = tokenized[j + 1];
+	    
+	           j++;
+    
+}
+	   }
+	 else if (tokenized[j] == ">"){
+	   if (current != limit - 1) {
+	      cerr << "error error error " << endl;
+	      }
+
+	    else if (j + 1 < limit) {
+	      outputFile = tokenized[j+1];
+
+	      j++;
+	      }
+}
+	else {}
+	  }
+
     pipe(fd);
     pipes[current][0] = fd[0];
     pipes[current][0] = fd[1];
@@ -354,7 +434,8 @@ int main(int argF, char ** argv) {
     pid = fork();
       cout << "after da fork" << endl;
       if (pid == 0) {
-	if (current == 0){
+	if (pipecount > 0){
+	  	if (current == 0){
 	  cout << "piping in from startFile" << endl;
 	 if (inputFile.length() > 0) {
 		int iF = open(inputFile.c_str(), O_RDONLY);
@@ -369,13 +450,15 @@ int main(int argF, char ** argv) {
 	}
 	
 	if (current > 0){
-	  cout << "second command piper" << command[current] << endl;
+	  cout << "second command piper " << command << endl;
 	  int the_iF = pipes[current - 1][0];
 	  dup2(the_iF,STDIN_FILENO);
 	  close(pipes[current-1][1]);
 	}
 	
 	if (current < num_token_groups - 1){
+	  cout << command[current] << " before the pipe" << endl;
+	  cout << "spitting out output into next pipe" << endl;
 	  int the_oF = pipes[current][1];
 	  dup2(the_oF,STDOUT_FILENO);
 	  close(pipes[current][0]);
@@ -386,7 +469,7 @@ int main(int argF, char ** argv) {
 	    dup2(oF,STDOUT_FILENO);
 	  }
 	}
-	
+	}
 // 	if (pipecount > 0){
 // 	  if (num_token_groups > 0){
 // 	    cout << "of course piping" << endl;
@@ -418,92 +501,114 @@ int main(int argF, char ** argv) {
       //cout << command << endl;
       
       //cout << command << endl;
-      //char * args;
-      	//string deliminator
-	//char ** part = "";
-      args = (char**)malloc(sizeof(char*) *50);
-      for (int f = 0; f < 50; f++){
-	args[f] = (char *) malloc(100 * sizeof(char));
-      }
-      
-      int k = 0;
-	int t = 0;
-	int cIndicator = 0;
-	for (int j = 0; j < strlen(command); j++){
-	  cout << k <<"this is the k value or kth arg" << endl;
-	  cout << "j balue is " << j << endl;
-	  
-	  if (command[j] != ' '){
-	    //cout << "i mean your right" << endl;
-	    if(j == 0 && command[j] != '/'){
-	      int l = 0;
-	      while(l < 250 && buff[l] != '\0'){
-		args[k][t] = buff[l];
-		l = l + 1;
-		t = t + 1;
-	      }
-	      args[k][t] = '/';
-	      t = t + 1;
-	    }
-	    args[k][t] = command[j];
-	    cout << "added an actual command" << endl;
-	    t = t + 1;
-	  }
-	  else {
-	    cout << "we are in here because there is a space" << endl;
-	    bool nomoreSpace = true;
-	    while(j + 1 < strlen(command) && nomoreSpace){
-	      cout << "happened once" << endl;
-	      nomoreSpace = false;
-	      if(command[j+1] == ' '){
-		j = j + 1;
-		nomoreSpace = true;
-	      }
-	      else{
-		k += 1;
-		t = 0;
-		args[k][t] = '\0';
-	      }
-	    }
-	    //args[index][argVal] = part;
-	    args[k][t] = '\0';
-	    //k += 1;
-	    //t = 0;
-	    //part = "";
-	  }
-	  
-	  //args[k][t] = '\0';
-	  //cout << "before that" << endl;
-	  //cout << args << endl;
-	  //cout << "command is " << args[0] << endl;
-	  
+      // char ** args;
+//       	//string deliminator
+// 	//char ** part = "";
+	char ** args = (char**)malloc(sizeof(char*) *50);
+	for (int f = 0; f < limit + 1; f++){
+	  args[f] = (char *) malloc(100 * sizeof(char));
 	}
+	cout << "first arg, second arg is " << tokenized[0] << " " << tokenized[1] << endl;
+	char * argv[limit + 1];
+	
+	int element = 0;
+	char * ready = "";
+	for( element = 0; element < size; element++){
+	   // argv[element] = tokenized[element].c_str();
+	    string ex = tokenized[element];
+	    for (int g = 0; g < ex.length(); g++){
+	      cout << "string value is " << ex[g] << endl;
+	      args[element] += (char) ex[g];
+	    }
+	    args[element] += '\0';
+	    argv[element] = args[element];
+	    cout << argv[0] << "current arg" <<  endl;
+	   // argv[element] = ready;
+	}
+	argv[element] =  NULL;
       
-      for (int j = 0; j <= k; j++){
-	cout << "component is " << args[j] << endl;
-	
-      }
-      cout << "-------------------" << endl;
-	k += 2;
-      cout << "k value is " << k << endl;
-      char * argv[k];
-      int w = 0;
-      for (int e = 0; e < k; e++){
-	
-	argv[e] = args[e];
-	w = e;
-      }
-      cout << "w is " << w << endl;
-      argv[w] = NULL;
+// 	int k = 0;
+// 	int t = 0;
+// 	int cIndicator = 0;
+// 	for (int j = 0; j < strlen(command); j++){
+// 	  cout << k <<"this is the k value or kth arg" << endl;
+// 	  cout << "j balue is " << j << endl;
+// 	  
+// 	  if (command[j] != ' '){
+// 	    //cout << "i mean your right" << endl;
+// 	    if(j == 0 && command[j] != '/'){
+// 	      int l = 0;
+// 	      while(l < 250 && buff[l] != '\0'){
+// 		args[k][t] = buff[l];
+// 		l = l + 1;
+// 		t = t + 1;
+// 	      }
+// 	      args[k][t] = '/';
+// 	      t = t + 1;
+// 	    }
+// 	    args[k][t] = command[j];
+// 	    cout << "added an actual command" << endl;
+// 	    t = t + 1;
+// 	  }
+// 	  else {
+// 	    cout << "we are in here because there is a space" << endl;
+// 	    bool nomoreSpace = true;
+// 	    while(j + 1 < strlen(command) && nomoreSpace){
+// 	      cout << "happened once" << endl;
+// 	      nomoreSpace = false;
+// 	      if(command[j+1] == ' '){
+// 		j = j + 1;
+// 		nomoreSpace = true;
+// 	      }
+// 	      else{
+// 		k += 1;
+// 		t = 0;
+// 		args[k][t] = '\0';
+// 	      }
+// 	    }
+// 	    //args[index][argVal] = part;
+// 	    args[k][t] = '\0';
+// 	    //k += 1;
+// 	    //t = 0;
+// 	    //part = "";
+// 	  }
+// 	  
+// 	  //args[k][t] = '\0';
+// 	  //cout << "before that" << endl;
+// 	  //cout << args << endl;
+// 	  //cout << "command is " << args[0] << endl;
+// 	  
+// 	}
+//       
+//       for (int j = 0; j <= k; j++){
+// 	cout << "component is " << args[j] << endl;
+// 	
+//       }
+//       cout << "-------------------" << endl;
+// 	k += 2;
+//       cout << "k value is " << k << endl;
+//       char * argv[k];
+//       int w = 0;
+//       for (int e = 0; e < k; e++){
+// 	
+// 	argv[e] = args[e];
+// 	w = e;
+//       }
+//       cout << "w is " << w << endl;
+      //argv[element] = NULL;
 	//args[k+1] = NULL;
       cout << "out of loop!" << endl;
-      cout << "command is " << args[0] << endl;
+      cout << "command is " << argv[0] << endl;
 //       cout << "second arg is " << args[1] << endl;
 //       cout << "third arg is " << args[2] << endl;
 //       cout << " " << endl;
 //    
 
-      execvp(argv[0], argv);
+      int exVal = execvp(argv[0], argv);
+      if (exVal == -1){
+	cout << "exec does not even work" << endl;
+      }
+      cout << "oh I just execed all right" << endl;
       //execv(tokens[current][0], tokens[current]);
       //current = current + 1;
       }
