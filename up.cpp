@@ -122,8 +122,9 @@ int stringToTokens(string command, string* argumentP) {
 // increment the pointer index
       current += 1;
     }
+    current -= 1;
     cout << "at the bottom" << endl;
-return 1;
+return current;
 }
 
 char ** parseLine(char * raw){
@@ -387,7 +388,7 @@ int main(int argF, char ** argv) {
     int fd[2];
     string inputFile;
     string outputFile;
-    string tokenized[limit + 1];
+    string tokenized[100];
    // while(num_token_groups > 0){
     char * command = tokens[current];
     std::string strcommand(command);
@@ -398,13 +399,13 @@ int main(int argF, char ** argv) {
     //strcommand = str(command);
     
     
-    for (int j = 0; j < limit + 1; j++){
+    for (int j = 0; j < a; j++){
 	   if (tokenized[j] == "<") {
 	      if (current != 0) {
 		cerr << "wrong pipe" << endl;
 		}
 
-	   else if (j + 1 < limit) {
+	   else if (j + 1 < a) {
 	      inputFile = tokenized[j + 1];
 	    
 	           j++;
@@ -412,11 +413,11 @@ int main(int argF, char ** argv) {
 }
 	   }
 	 else if (tokenized[j] == ">"){
-	   if (current != limit - 1) {
+	   if (current != a) {
 	      cerr << "error error error " << endl;
 	      }
 
-	    else if (j + 1 < limit) {
+	    else if (j + 1 < a) {
 	      outputFile = tokenized[j+1];
 
 	      j++;
@@ -508,7 +509,7 @@ int main(int argF, char ** argv) {
 	for (int f = 0; f < limit + 1; f++){
 	  args[f] = (char *) malloc(100 * sizeof(char));
 	}
-	cout << "first arg, second arg is " << tokenized[0] << " " << tokenized[1] << endl;
+	//cout << "first arg, second arg is " << tokenized[0] << " " << tokenized[1] << endl;
 	char * argv[limit + 1];
 	
 	int element = 0;
@@ -516,13 +517,17 @@ int main(int argF, char ** argv) {
 	for( element = 0; element < size; element++){
 	   // argv[element] = tokenized[element].c_str();
 	    string ex = tokenized[element];
-	    for (int g = 0; g < ex.length(); g++){
+	    int g = 0;
+	    for (g = 0; g < ex.length(); g++){
 	      cout << "string value is " << ex[g] << endl;
-	      args[element] += (char) ex[g];
+	      //args[element] += (char) ex[g];
+	      args[element][g] = ex[g];
 	    }
-	    args[element] += '\0';
+	   
+	    args[element][g] = '\0';
+	  //  cout << args[element];
 	    argv[element] = args[element];
-	    cout << argv[0] << "current arg" <<  endl;
+	   // cout << argv[0] << "current arg" <<  endl;
 	   // argv[element] = ready;
 	}
 	argv[element] =  NULL;
@@ -608,7 +613,9 @@ int main(int argF, char ** argv) {
       if (exVal == -1){
 	cout << "exec does not even work" << endl;
       }
+      else{
       cout << "oh I just execed all right" << endl;
+      }
       //execv(tokens[current][0], tokens[current]);
       //current = current + 1;
       }
