@@ -85,6 +85,8 @@ char *trimwhitespace(char *str){
 }
 
 int stringToTokens(string command, string* argumentP) {
+  cout << " the command is " << command << endl;
+  int modified = 0;
    int i = 0;
     int current = 0;
     int beginPosition = command.find_first_not_of("\t ");
@@ -113,6 +115,7 @@ int stringToTokens(string command, string* argumentP) {
 // set token end index to current pos -- first WS char
       int tokenEndIndex = i;
       string token = command.substr((unsigned long) tokenBeginIndex, (unsigned long) (tokenEndIndex - tokenBeginIndex));
+      cout << token << " the current token" << endl;
       //if (isValidToken(token))
 // save the token into the token array
   //    cout << "the token is " << token << endl;
@@ -120,12 +123,20 @@ int stringToTokens(string command, string* argumentP) {
       argumentP[current] = token;
     //  cout << "allocation was fine" << endl;
 // increment the pointer index
+      if (token == ">" || token == "<"){
+	modified = current;
+      }
       current += 1;
     }
     current -= 1;
    // cout << "at the bottom" << endl;
 cout << "number of tokens is " << current << endl;
-return current;
+if (modified != 0){
+  cout << "ACTUAL NUMBER WITH REDIRECT " << modified << endl;
+  //return (modified -1);
+}
+  return current;
+
 }
 
 char ** parseLine(char * raw){
@@ -146,6 +157,7 @@ char ** parseLine(char * raw){
   char ** command = (char **)malloc(strlen(raw) *sizeof(char*));
   if (raw[p] == '|' || raw[p] == '>' || raw[p] == '<'  || raw[strlen(raw)-1] == '|' || raw[strlen(raw)-1] == '>' || raw[strlen(raw)-1] == '<'){
     valid = false;
+    cout << "INVALID STRING" << endl;
     return null;
     //cannot end with a operations or begin with an operation
     
@@ -155,6 +167,7 @@ char ** parseLine(char * raw){
    // cout << strlen(raw) << endl;
     string curr = "";
     for (int i = 0; i < strlen(raw); i++){
+      
      // cout << "i value is " << i << endl;
       if (raw[i] != '|'){
 //	cout << "adding on a value " << raw[i] << endl;
@@ -220,6 +233,7 @@ char ** parseLine(char * raw){
 	
 	command[count] = (char *) malloc(curr.length() + 1 * sizeof(char));
 	for ( int i = 0; i < curr.length() - 1;i++){
+	  
 	  command[count][i] = curr[i];
 	}
 	p = 0;
@@ -247,11 +261,14 @@ char ** parseLine(char * raw){
 //       //command[count] += '\0';
 //       cout << curr[0] << "first character" << curr.length() << endl;
       curr += '\0';
+      cout << "curr value is " << curr << endl;
       command[count] = (char *) malloc(curr.length() + 1 * sizeof(char));
+      
 	for ( int i = 0; i < curr.length() - 1;i++){
 	  command[count][i] = curr[i];
       
 	}
+	cout << command[count] << " THIS SHOULD BE THE SAME " << endl;
       //command[count] = (char *) (strlen(curr) + 1 * sizeof(char));
       //command[count] = curr;
       
@@ -323,6 +340,7 @@ int main(int argF, char ** argv) {
     while ( givenFile.get(x) && x != '\n'){
       fullLine += x;
     }
+    
       }/* Exit command detected - exit shell */
 //   else {
 //     cout << "> ";
@@ -347,6 +365,7 @@ int main(int argF, char ** argv) {
   if (strlen(currentLine) > 100){
     cout << "invalid" << endl;
   }*/
+  fullLine = fullLine + " ";
   int y = 0;
   for (y = 0; y < fullLine.length(); y++){
     currentLine[y] = fullLine[y];
@@ -389,51 +408,85 @@ int main(int argF, char ** argv) {
   for (int current = 0; current < limit; current++){
 
 
-    string inputFile;
-    string outputFile;
+    string inputFile = "";
+    string outputFile = "" ;
     string tokenized[101];
     char * command = tokens[current];
     std::string strcommand(command);
     cout << "here hahaha" << endl;
     int a = stringToTokens(strcommand, tokenized);
+    cout << "a " <<  a << endl;
     int size = a+1;
+    int realSize = 0;
+    
+    cout << tokenized[0] << " " << tokenized[1] << " " << tokenized[2] << " " << tokenized[3];
     //cout << tokenized[0] << "does the tokenizer work?" << endl;
     //if (current == 0 ){
     pipe(pipes);
    // }
     //pipes2d[current][0] = pipes[0];
     //pipes2d[current][1] = pipes[1];
-	  
+	cout << size << " is " << endl;
         cout << "current command index is " << current << endl;
     cout << "pipes 0 and pipes 1 " << pipes[0] << " " << pipes[1] << endl;
     
-    for (int j = 0; j < a; j++){
-	   if (tokenized[j] == "<") {
+    for (int j = 0; j < size; j++){
+	   cout <<  "WHY ARE WE NOT IN THIS LOOP" << endl;
+	   if (tokenized[j] == "<") { 
 	      if (current != 0) {
 		cerr << "wrong pipe" << endl;
 		}
 
-	   else if (j + 1 < a) {
-	      inputFile = tokenized[j + 1];
-	    
-	           j++;
+	      if (j + 1 < size) {
+		realSize = j;
+		inputFile = tokenized[j + 1];
+		  if (inputFile[0] != '/'){
+		  int l = 0;
+		  string cwd = "";
+		  while(l < 250 && buff[l] != '\0'){
+		    cwd = cwd + buff[l];
+		    //inputFile = buff[l] + inputFile[0];
+		    l = l + 1;   
+		    }
+		    inputFile = cwd + "/" + inputFile;
+		   }
+		   
+		  cout << inputFile << "was it appended correctly" << endl;
+		  j++;
     
-}
+		}
+	
 	   }
 	 else if (tokenized[j] == ">"){
-	   if (current != a) {
+	   if (current !=  limit - 1) {
 	      cerr << "error error error " << endl;
 	      }
 
-	    else if (j + 1 < a) {
+	   if (j + 1 < size) {
+	     realSize = j;
+	     cout << "current tokenized value is " << tokenized[j + 1] << endl;
 	      outputFile = tokenized[j+1];
-
+	      if (outputFile[0] != '/'){
+	      int l = 0;
+	      string cwd = "";
+ 	      while(l < 250 && buff[l] != '\0'){
+		cwd = cwd + buff[l]; 
+ 		//outputFile = buff[l] + outputFile;
+	        l = l + 1;   
+	      }
+	      cout << "current output file is " << outputFile << endl;
+	      outputFile = cwd + "/" + outputFile;
+	      cout << outputFile << "was it appended correctly" << endl;
+	      }
+	      
 	      j++;
 	      }
 }
 	else {}
 	  }
-
+      if (realSize != 0){
+	size = realSize;
+      }
 //     pipe(fd);
 //     pipes[current][0] = fd[0];
 //     pipes[current][1] = fd[1];
@@ -458,6 +511,10 @@ int main(int argF, char ** argv) {
 //	    cout << "element is " << element << endl;
 	   // argv[element] = tokenized[element].c_str();
 	    string ex = tokenized[element];
+	    if (ex == ">" || ex == "<" ){
+	      cout << "SHOULD NEVER SEE THIS" << endl;
+	      break;
+	    }
 	    int g = 0;
 	    for (g = 0; g < ex.length(); g++){
 //	      cout << "string value is " << ex[g] << endl;
@@ -475,88 +532,10 @@ int main(int argF, char ** argv) {
 	argv[element] =  '\0';
 	cout << argv[0] << " sfsfS " << argv[1] << endl;
 	
-
-// 	int k = 0;
-// 	int t = 0;
-// 	int cIndicator = 0;
-// 	for (int j = 0; j < strlen(command); j++){
-// 	  cout << k <<"this is the k value or kth arg" << endl;
-// 	  cout << "j balue is " << j << endl;
-// 	  
-// 	  if (command[j] != ' '){
-// 	    //cout << "i mean your right" << endl;
-// 	    if(j == 0 && command[j] != '/'){
-// 	      int l = 0;
-// 	      while(l < 250 && buff[l] != '\0'){
-// 		args[k][t] = buff[l];
-// 		l = l + 1;
-// 		t = t + 1;
-// 	      }
-// 	      args[k][t] = '/';
-// 	      t = t + 1;
-// 	    }
-// 	    args[k][t] = command[j];
-// 	    cout << "added an actual command" << endl;
-// 	    t = t + 1;
-// 	  }
-// 	  else {
-// 	    cout << "we are in here because there is a space" << endl;
-// 	    bool nomoreSpace = true;
-// 	    while(j + 1 < strlen(command) && nomoreSpace){
-// 	      cout << "happened once" << endl;
-// 	      nomoreSpace = false;
-// 	      if(command[j+1] == ' '){
-// 		j = j + 1;
-// 		nomoreSpace = true;
-// 	      }
-// 	      else{
-// 		k += 1;
-// 		t = 0;
-// 		args[k][t] = '\0';
-// 	      }
-// 	    }
-// 	    //args[index][argVal] = part;
-// 	    args[k][t] = '\0';
-// 	    //k += 1;
-// 	    //t = 0;
-// 	    //part = "";
-// 	  }
-// 	  
-// 	  //args[k][t] = '\0';
-// 	  //cout << "before that" << endl;
-// 	  //cout << args << endl;
-// 	  //cout << "command is " << args[0] << endl;
-// 	  
-// 	}
-//       
-//       for (int j = 0; j <= k; j++){
-// 	cout << "component is " << args[j] << endl;
-// 	
-//       }
-//       cout << "-------------------" << endl;
-// 	k += 2;
-//       cout << "k value is " << k << endl;
-//       char * argv[k];
-//       int w = 0;
-//       for (int e = 0; e < k; e++){
-// 	
-// 	argv[e] = args[e];
-// 	w = e;
-//       }
-//       cout << "w is " << w << endl;
-      //argv[element] = NULL;
-	//args[k+1] = NULL;
-  //    cout << "out of loop!" << endl;
-    //  cout << "command is " << argv[0] << endl;
-//       cout << "second arg is " << args[1] << endl;
-//       cout << "third arg is " << args[2] << endl;
-//       cout << " " << endl;
-//    
-      
-	if (pipecount > 0){
-	  	if (current == 0){
+	if (current == 0){
 	  cout << "piping in from startFile" << endl;
 	 if (inputFile.length() > 0) {
+		cerr << "time for some FILE INPUT" << endl;
 		int iF = open(inputFile.c_str(), O_RDONLY);
 		if (iF == -1) {
 		  cerr << strerror(errno) << endl;	
@@ -578,6 +557,9 @@ int main(int argF, char ** argv) {
 	  cout << "true love" << endl;
 	
 	}
+      
+	if (pipecount > 0){
+	  	
 	//&& current < num_token_groups - 1
 	if (current > 0  ){
 	  cout << "second command piper " << command << endl;
@@ -631,9 +613,14 @@ int main(int argF, char ** argv) {
 	  //close(pipes[1]);
 	}
 	
+
+	
+	}
+	
 	if (current == num_token_groups - 1){
 	  cerr << "inside the belly of the beast" << endl;
 	  if (outputFile.length() > 0){
+	    cerr << "FILE OUTPUTING TIME" << endl;
 	    int we_oF = open(outputFile.c_str(), O_WRONLY|O_CREAT);
 	    dup2(we_oF,STDOUT_FILENO);
 	  }
@@ -643,8 +630,6 @@ int main(int argF, char ** argv) {
 // 	  cout << "made it here" << endl;
 // 	  execvp(argv[0], argv);
 
-	}
-	
 	}
       cerr << "------------------------------------------------------------------" << endl;
     // if (current < num_token_groups - 1){
@@ -663,55 +648,7 @@ int main(int argF, char ** argv) {
       }
       else{
       cerr << "whelp i execed " << endl;
-      //close(pipes[1]);
-      //in = pipes[0];
-      //}
-//       if (exVal == -1){
-// 	cout << "exec does not even work" << endl;
-// 	//sleep(3);
-//       }
-//       else{
-//       cout << "oh I just execed all right" << endl;
-//       }
-// 	if (pipecount > 0){
-// 	  if (num_token_groups > 0){
-// 	    cout << "of course piping" << endl;
-// 	    if (num_token_groups == pipecount) {
-// 	      cout << "first pipe" << endl;
-// 	      close(pipearray[pipeid][0]);
-// 	      dup2(pipearray[pipeid][1], STDOUT_FILENO);
-// 	    }
-// 	  
-// 	    else {
-// 	      close(pipearray[pipeid][0]);
-// 	      dup2(pipearray[pipeid][1], STDOUT_FILENO);
-// 	      close(pipearray[pipeid - 1][1]);
-// 	      dup2(pipearray[pipeid - 1][0], STDIN_FILENO);
-// 	    }
-// 	    }
-// 	else{
-// 	  //last token
-// 	  close(pipearray[pipeid - 1][1]);
-// 	  dup2(pipearray[pipeid - 1][0], STDIN_FILENO);
-// 	  
-// 	}
-// 	}
-      //cout << "THE PARSED STRING" << " " << tokens[current] << endl;
-     // char * command = tokens[current];
-      //cout << command << endl;
       
-      //command = trimwhitespace(command);
-      //cout << command << endl;
-      
-      //cout << command << endl;
-      // char ** args;
-//       	//string deliminator
-// 	//char ** part = "";
-	
-     // cout << "hello." << endl;
-      //sleep(3);
-      //execv(tokens[current][0], tokens[current]);
-      //current = current + 1;
       }
       }
     else{
@@ -729,30 +666,11 @@ int main(int argF, char ** argv) {
       cout << "finished eaiting" << endl;
       p_id++;
     }
-	//if (
-  //       for (j = 0; j < pipe_count; j++) {
-  // 	close(pipe_array[j][0]);
-  // 	close(pipe_array[j][1]);
-  //       }
-    
-    }
-    //close(pipes[0]);
-//     for (int i = 0; i <= pipecount; i++){
-//       close(pipes[i][0]);
-//       close(pipes[i][1]);
-//     }
-      //close(pipes[0]);
-      //close(pipes[1]);
-   
-//     for (p_id = 0; p_id <= pipecount; p_id++) {
-//      // pid_status = 0;
-//       waitpid(pids[p_id], &pid_status[p_id],0);
-//     //  cerr << "error status" << pid_status << endl;
-// 	}
+	
     for(int d = 0; d <= pipecount; d++){
       cout << "Process " << " exited with status " << pid_status[d] << endl;
     }
-    
+  }
 	  
   }
   return 0;
