@@ -14,8 +14,6 @@
  * 
  * 	COMPILE: make 
  * 	OBJECTS: up.o
- * 	
- * 	HEADERS: up.h
  * 
  * 	it creates the executable ./msh excutable can take stdin or read from a file a list of commands
  * 
@@ -34,7 +32,6 @@
 
 
 
-#include "up.h"
 #include <stdint.h>
 #include <stdlib.h>
 #include <cstddef>
@@ -75,11 +72,17 @@ int itemizer(string command, string* argumentP) {
     int current = 0;
     int start = command.find_first_not_of("\t "); /* first index of command that isnt a string */
     int end = command.find_last_not_of("\t "); /* last index of command that isnt a string  */
-    int i = start;
+    i = start;
+    if ( start == -1){
+      return -1;
+    }
     if (start == end && command[start] != ' ' && command[start] != '\t') { /* if string is only 1 character long but is valid */
 	argumentP[0] = command[start];
   
       return current + 1;
+    }
+    if (start == end && (command[start] == ' ' || command[start] == '\t')){
+      return -1;
     }
     if (command[start] == '|' || command[start] == '>' || command[start] == '<' || command[end] == '|' || command[end] == '>' || command[end] == '<'){
       return -1; /* invalid placement of a pipe or redirection operator */
@@ -151,10 +154,16 @@ char ** parseLine(char * raw){
 	
 	if(raw[i] == '>'){
 	  hasOut += 1; 
+	  if (hasOut > 1){
+	    return NULL;
+	  }
 	  previousOut = 1;
 	}
 	if(raw[i] == '<'){
 	  hasIn += 1;
+	  if (hasIn > 1){
+	    return NULL;
+	  }
 	  /* if file redirection is in wrong place */
 	  if (pipecount != 0) {
 	    return NULL;
@@ -166,6 +175,10 @@ char ** parseLine(char * raw){
       if(raw[i] == '|'){
 	  if (raw[i-1] != ' '){
 	    /* if the previous character is not a string then it is invalid input */
+	    valid = false;
+	    return NULL;
+	  }
+	  if (raw[i+1] != ' '){
 	    valid = false;
 	    return NULL;
 	  }
@@ -181,6 +194,7 @@ char ** parseLine(char * raw){
 	    return NULL;
 	  }
 	/* null terminate the string */
+	
 	curr += '\0';
 	/* for the current index of the 2d array allocate an accurate amount of memory and copy from the current string into this index */
 	command[count] = (char *) malloc(curr.length() + 1 * sizeof(char));
@@ -188,6 +202,7 @@ char ** parseLine(char * raw){
 	  
 	  command[count][i] = curr[i];
 	}
+
 	/* recent most of the flags, the curr string, and add 1 to the current count */
 	p = 0;
 	count += 1;
@@ -248,20 +263,25 @@ int main(int argF, char ** argv) {
     while ( givenFile.get(x) && x != '\n'){
       fullLine += x;
     }
-    
       }
+
    else {
          /* otherwise, read from standard in  */
 	getline(cin, fullLine);
    }
+    if (cin.eof() == true){
+      break;
+    }
     /* if the line reads "exit" then escape the shell  */
     if (fullLine == "exit") {
       pipecount = 0;
       break;
       }
       
+      
   
    if( argF > 1 && givenFile.eof()){
+     break;
      exit(0);
    }
    /* if the length of the line is greater than 100 characters the line is too long and is considered invalid input  */
@@ -269,6 +289,7 @@ int main(int argF, char ** argv) {
     cout << "invalid input" << endl;
     goto commands;
   }
+  
   
   int length = fullLine.length();
   int y = 0;
@@ -324,6 +345,7 @@ int main(int argF, char ** argv) {
 	   bool contains_not_approved = (tokenized[j].find_first_not_of("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz01234566789-./_") == string::npos);
 	   /* if it is not, exit */
 	   if(contains_not_approved == false){
+	     cout << "invalid input" << endl;
 	     goto commands;
 	   }
 	   
@@ -352,7 +374,9 @@ int main(int argF, char ** argv) {
 		}
 
 	      if (j + 1 < size) {
+		if (realSize == 0) {
 		realSize = j;
+		}
 		inputFile = tokenized[j + 1];
 		  if (inputFile[0] != '/'){
 		  int l = 0;
@@ -382,7 +406,9 @@ int main(int argF, char ** argv) {
 	      }
 
 	   if (j + 1 < size) {
+	     if(realSize == 0){
 	     realSize = j;
+	     }
 	      outputFile = tokenized[j+1];
 	      if (outputFile[0] != '/'){
 	      int l = 0;
