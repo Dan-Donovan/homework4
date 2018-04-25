@@ -236,13 +236,9 @@ char ** parseLine(char * raw){
 
     
 /* main method -- can take in a input file an argument if one does not want to use standard in */
-int main(int argF, char ** argv) {
+int main() {
   
-  ifstream givenFile;
-  /* if a file was passed as an argument for the input */
-  if (argF > 1){
-    givenFile.open(argv[1]);
-  }
+
   
   /* set up a buffer and get the name of the current working directory */
   char  buff[300];
@@ -257,18 +253,10 @@ int main(int argF, char ** argv) {
   char currentLine[110];
   memset(&currentLine[0],0,110);
   string fullLine = "";
-  if (argF > 1) {
-    char x;
-    /* if reading from file, get each character before a new line  */
-    while ( givenFile.get(x) && x != '\n'){
-      fullLine += x;
-    }
-      }
 
-   else {
-         /* otherwise, read from standard in  */
-	getline(cin, fullLine);
-   }
+         /*read from standard in  */
+    getline(cin, fullLine);
+    
     if (cin.eof() == true){
       break;
     }
@@ -278,12 +266,6 @@ int main(int argF, char ** argv) {
       break;
       }
       
-      
-  
-   if( argF > 1 && givenFile.eof()){
-     break;
-     exit(0);
-   }
    /* if the length of the line is greater than 100 characters the line is too long and is considered invalid input  */
   if (fullLine.length() > 100 ){
     cout << "invalid input" << endl;
@@ -371,6 +353,7 @@ int main(int argF, char ** argv) {
 	   if (tokenized[j] == "<") { 
 	      if (current != 0) {
 		cout << "invalid input" << endl;
+		goto commands;
 		}
 
 	      if (j + 1 < size) {
@@ -403,6 +386,7 @@ int main(int argF, char ** argv) {
 	 else if (tokenized[j] == ">"){
 	   if (current !=  limit - 1) {
 	      cout << "invalid input" << endl;
+	      goto commands;
 	      }
 
 	   if (j + 1 < size) {
